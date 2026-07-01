@@ -33,15 +33,6 @@ FRIDAY is not just a chat app — it is a foundation for what AI-powered mobile 
 
 ---
 
-## 📸 Screenshots
-
-<!-- Add screenshots here after uploading them to the repo -->
-<!-- Example: -->
-<!-- ![Home Screen](screenshots/home.png) -->
-<!-- ![Chat Screen](screenshots/chat.png) -->
-
----
-
 ## 🛠️ Tech Stack
 
 | Layer | Technology |
