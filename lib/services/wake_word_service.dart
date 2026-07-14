@@ -8,11 +8,15 @@ class WakeWordService {
 
   bool get isListening => _isListening;
 
-  Future<void> initialize({required Function() onWakeWord}) async {
+  Future<void> initialize({required Function() onWakeWord, Function(String)? onStatus}) async {
     _onWakeWord = onWakeWord;
     _isInitialized = await _stt.initialize(
-      onError: (_) => _restartListening(), // auto restart on error
+      onError: (error) {
+        print("WakeWord error: $error");
+        _restartListening();
+      },
       onStatus: (status) {
+        if (onStatus != null) onStatus(status);
         // Auto restart when STT stops
         if (status == 'done' || status == 'notListening') {
           _restartListening();

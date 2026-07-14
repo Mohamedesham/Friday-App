@@ -33,12 +33,23 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    _sttService.initialize();
+    _sttService.initialize(onStatus: _handleStatus);
     _initWakeWord();
   }
 
+  void _handleStatus(String status) {
+    if (status == 'done' || status == 'notListening') {
+      if (mounted) setState(() => _isListening = false);
+    } else if (status == 'listening') {
+      if (mounted) setState(() => _isListening = true);
+    }
+  }
+
   Future<void> _initWakeWord() async {
-    await _wakeWordService.initialize(onWakeWord: _onWakeWordDetected);
+    await _wakeWordService.initialize(
+      onWakeWord: _onWakeWordDetected,
+      onStatus: _handleStatus,
+    );
     await _wakeWordService.start();
   }
 
@@ -48,18 +59,32 @@ class _ChatScreenState extends State<ChatScreen> {
 
     setState(() => _isWaiting = false);
 
-    // Stop wake word BEFORE speaking and listening
+    // Stop wake word completely
     await _wakeWordService.stop();
 
-    await _ttsService.speak("Yes baliwwww? I'm listening to most baliw ever:) this is from your most cool friend you ever meet .");
+    // Wait for STT to fully release
+    await Future.delayed(const Duration(milliseconds: 500));
 
+    // Speak acknowledgment
+    await _ttsService.speak("Yes boss?");
+
+    // Wait for TTS to finish speaking
+    await Future.delayed(const Duration(milliseconds: 1200));
+
+    // Now start listening for command
     await _toggleListening();
 
-    // Restart wake word AFTER done
+    // IMPORTANT: Wait for user to finish speaking
+    // We poll _isListening which is updated by _handleStatus
+    while (_isListening) {
+      await Future.delayed(const Duration(milliseconds: 500));
+    }
+
+    // Restart wake word after done
     await _wakeWordService.start();
 
     setState(() => _isWaiting = true);
-  }  // Update dispose
+  }
   @override
   void dispose() {
     _wakeWordService.dispose();

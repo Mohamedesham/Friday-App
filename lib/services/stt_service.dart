@@ -5,9 +5,13 @@ class SttService {
   bool _isInitialized = false;
 
   // Must call this before using
-  Future<bool> initialize() async {
+  Future<bool> initialize({Function(String)? onStatus}) async {
     _isInitialized = await _stt.initialize(
       onError: (error) => print('STT error: $error'),
+      onStatus: (status) {
+        print('STT status: $status');
+        if (onStatus != null) onStatus(status);
+      },
     );
     return _isInitialized;
   }
@@ -21,13 +25,14 @@ class SttService {
     if (!_isInitialized) return;
     await _stt.listen(
       onResult: (result) {
+        print('STT Result: ${result.recognizedWords}, final: ${result.finalResult}');
         if (result.finalResult) {
           // Only trigger when user finishes speaking
           onResult(result.recognizedWords);
         }
       },
-      listenFor: const Duration(seconds: 10), // Max listening time
-      pauseFor: const Duration(seconds: 2), // Stop after 2s of silence
+      listenFor: const Duration(seconds: 30), // Increased max listening time
+      pauseFor: const Duration(seconds: 4), // Increased pause time
       localeId: 'en_US',
     );
   }

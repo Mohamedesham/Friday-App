@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:torch_light/torch_light.dart';
 import 'package:volume_controller/volume_controller.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -5,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 class DeviceControlService {
   bool _flashlightOn = false;
   final VolumeController _volumeController = VolumeController();
+  static const _channel = MethodChannel('com.example.friday/device');
 
   // 🔦 Flashlight
   Future<String> toggleFlashlight({bool? turnOn}) async {
@@ -54,6 +56,23 @@ class DeviceControlService {
       return 'Volume decreased.';
     } catch (e) {
       return 'Sorry, I could not decrease the volume.';
+    }
+  }
+
+  // Lock Screen
+  Future<String> lockScreen() async {
+    try {
+      final isLocked = await _channel.invokeMethod<bool>('lockScreen');
+
+      if (isLocked == false) {
+        // Not admin yet — request admin
+        await _channel.invokeMethod('requestAdmin');
+        return 'Please enable FRIDAY as device admin, then try again.';
+      }
+
+      return 'Locking screen now, boss.';
+    } catch (e) {
+      return 'Sorry, I could not lock the screen.';
     }
   }
 

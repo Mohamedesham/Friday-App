@@ -28,6 +28,12 @@ class CommandParserService {
     if (text.contains('max volume') || text.contains('full volume')) {
       return await _deviceControl.setVolume(1.0);
     }
+    // Lock Screen
+    if (text.contains('lock') ||
+        text.contains('screen off') ||
+        text.contains('lock screen')) {
+      return await _deviceControl.lockScreen();
+    }
 
     // 📞 Call (expects format: "call 01234567890")
     if (text.startsWith('call ')) {
