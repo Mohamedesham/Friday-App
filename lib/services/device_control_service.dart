@@ -1,3 +1,5 @@
+import 'package:android_intent_plus/android_intent.dart';
+import 'package:android_intent_plus/flag.dart';
 import 'package:flutter/services.dart';
 import 'package:torch_light/torch_light.dart';
 import 'package:volume_controller/volume_controller.dart';
@@ -108,18 +110,21 @@ class DeviceControlService {
     }
   }
 
-  // 🌐 Open a website/app
-  Future<String> openUrl(String url) async {
+  // open a app
+ Future <String> openApp(String appName, String packageName)async{
     try {
-      final uri = Uri.parse(url.startsWith('http') ? url : 'https://$url');
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-        return 'Opening $url now.';
-      } else {
-        return 'Sorry, I could not open that.';
-      }
-    } catch (e) {
-      return 'Sorry, something went wrong.';
+      final intent = AndroidIntent(
+        action: 'android.intent.action.MAIN',
+        package: packageName,
+        category: 'android.intent.category.LAUNCHER',
+        flags: <int>[Flag.FLAG_ACTIVITY_NEW_TASK],
+      );
+      await intent.launch();
+      return 'Opening $appName now, boss.';
     }
-  }
+    catch(e){
+      print("Open app error: $e");
+      return 'Sorry boss, I could not open $appName. Make sure it is installed.';
+    }
+ }
 }

@@ -1,8 +1,8 @@
 import 'package:speech_to_text/speech_to_text.dart';
+import 'stt_service.dart';
 
 class WakeWordService {
-  final SpeechToText _stt = SpeechToText();
-  bool _isInitialized = false;
+  final SttService _sttService = SttService();
   bool _isListening = false;
   Function()? _onWakeWord;
 
@@ -10,43 +10,37 @@ class WakeWordService {
 
   Future<void> initialize({required Function() onWakeWord, Function(String)? onStatus}) async {
     _onWakeWord = onWakeWord;
-    _isInitialized = await _stt.initialize(
-      onError: (error) {
-        print("WakeWord error: $error");
+    await _sttService.initialize(onStatus: (status) {
+      if (onStatus != null) onStatus(status);
+      if (status == 'done' || status == 'notListening') {
         _restartListening();
-      },
-      onStatus: (status) {
-        if (onStatus != null) onStatus(status);
-        // Auto restart when STT stops
-        if (status == 'done' || status == 'notListening') {
-          _restartListening();
-        }
-      },
-    );
+      }
+    });
   }
 
   Future<void> start() async {
-    if (!_isInitialized) return;
-    await _listen();
     _isListening = true;
+    await _listen();
   }
 
-
   Future<void> _listen() async {
-    await _stt.listen(
+    if (!_isListening) return;
+    await _sttService.stt.listen(
       onResult: (result) {
         final text = result.recognizedWords.toLowerCase();
-        if (text.trim() == 'friday' || text.contains('hey friday')) {
+        print("WakeWord hearing: $text");
+        if (text.contains('friday')) {
           _onWakeWord?.call();
-          return; //  don't send to Claude
         }
       },
       listenFor: const Duration(seconds: 30),
-      pauseFor: const Duration(seconds: 3),
+      pauseFor: const Duration(seconds: 10),
       localeId: 'en_US',
+      cancelOnError: false,
+      listenMode: ListenMode.confirmation,
     );
   }
-  // Auto restart to make it always-on
+
   Future<void> _restartListening() async {
     if (!_isListening) return;
     await Future.delayed(const Duration(milliseconds: 500));
@@ -55,11 +49,11 @@ class WakeWordService {
 
   Future<void> stop() async {
     _isListening = false;
-    await _stt.stop();
+    await _sttService.stt.stop();
   }
 
   Future<void> dispose() async {
     _isListening = false;
-    await _stt.stop();
+    await _sttService.stt.stop();
   }
 }

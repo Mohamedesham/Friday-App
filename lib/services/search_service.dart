@@ -7,6 +7,7 @@ class SearchService {
   // Search the web using Tavily
   Future<String?> search(String query) async {
     final apiKey = dotenv.env['TAVILY_API_KEY'] ?? '';
+    if (apiKey.isEmpty) return "Error: TAVILY_API_KEY not found.";
 
     try {
       final response = await http.post(
@@ -16,7 +17,7 @@ class SearchService {
           'api_key': apiKey,
           'query': query,
           'search_depth': 'basic',
-          'max_results': 3, // top 3 results is enough
+          'max_results': 3,
         }),
       );
 
@@ -24,57 +25,21 @@ class SearchService {
         final data = jsonDecode(response.body);
         final results = data['results'] as List;
 
-        if (results.isEmpty) return null;
+        if (results.isEmpty) return "No results found.";
 
-        // Format results into readable text for Claude
         final buffer = StringBuffer();
-        buffer.writeln('Web search results for "$query":');
-        buffer.writeln();
-
-        for (int i = 0; i < results.length; i++) {
-          final result = results[i];
-          buffer.writeln('Source ${i + 1}: ${result['title']}');
-          buffer.writeln('${result['content']}');
-          buffer.writeln();
+        for (var result in results) {
+          buffer.writeln('Title: ${result['title']}');
+          buffer.writeln('Content: ${result['content']}');
+          buffer.writeln('---');
         }
 
         return buffer.toString();
       } else {
-        return null;
+        return "Search failed with status: ${response.statusCode}";
       }
     } catch (e) {
-      return null;
+      return "Search error: $e";
     }
-  }
-
-  // Decide if a query needs web search
-  bool needsWebSearch(String query) {
-    final q = query.toLowerCase();
-
-    // Keywords that suggest real-time info is needed
-    final triggers = [
-      'today',
-      'now',
-      'current',
-      'latest',
-      'recent',
-      'news',
-      'price',
-      'weather',
-      'score',
-      'winner',
-      'who won',
-      'what happened',
-      '2025',
-      '2026',
-      'yesterday',
-      'this week',
-      'this month',
-      'dollar',
-      'pound',
-      'exchange rate',
-    ];
-
-    return triggers.any((trigger) => q.contains(trigger));
   }
 }

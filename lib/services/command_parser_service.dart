@@ -55,21 +55,41 @@ class CommandParserService {
       }
     }
 
-    // 🌐 Open website (expects: "open google.com" or "open youtube")
+    // 📱 Open Native Apps (Strictly apps only)
     if (text.startsWith('open ')) {
       final target = text.replaceFirst('open ', '').trim();
-      // Simple shortcuts
-      final shortcuts = {
-        'youtube': 'youtube.com',
-        'google': 'google.com',
-        'whatsapp': 'wa.me',
-        'facebook': 'facebook.com',
-        'instagram': 'instagram.com',
-      };
-      final url = shortcuts[target] ?? target;
-      return await _deviceControl.openUrl(url);
-    }
 
+      final nativeApps = {
+        'whatsapp': 'com.whatsapp',
+        'camera': 'com.android.camera2',
+        'settings': 'com.android.settings',
+        'calculator': 'com.android.calculator2',
+        'maps': 'com.google.android.apps.maps',
+        'spotify': 'com.spotify.music',
+        'youtube': 'com.google.android.youtube',
+        'instagram': 'com.instagram.android',
+        'facebook': 'com.facebook.katana',
+        'twitter': 'com.twitter.android',
+        'snapchat': 'com.snapchat.android',
+        'telegram': 'org.telegram.messenger',
+        'gmail': 'com.google.android.gm',
+        'chrome': 'com.android.chrome',
+        'netflix': 'com.netflix.mediaclient',
+        'tiktok': 'com.zhiliaoapp.musically',
+        'photos': 'com.google.android.apps.photos',
+        'contacts': 'com.android.contacts',
+        'clock': 'com.android.deskclock',
+        'files': 'com.android.documentsui',
+        'play store': 'com.android.vending',
+      };
+
+      if (nativeApps.containsKey(target)) {
+        return await _deviceControl.openApp(target, nativeApps[target]!);
+      }
+
+      // If the user says "open [something]" and it's not in the list,
+      // we let it fall through to Claude who can explain she can't open it.
+    }
     // Not a device command
     return null;
   }

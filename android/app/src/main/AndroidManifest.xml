@@ -1,4 +1,5 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
@@ -7,11 +8,17 @@
     <uses-permission android:name="android.permission.FLASHLIGHT"/>
     <uses-feature android:name="android.hardware.camera.flash" android:required="false"/>
     <uses-feature android:name="android.hardware.telephony" android:required="false"/>
-
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE"/>
     <application
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:label="friday">
+        <service
+            android:name="id.flutter.flutter_background_service.BackgroundService"
+            android:foregroundServiceType="microphone"
+            android:exported="false"
+            tools:replace="android:exported"/>
         <activity
             android:name=".MainActivity"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
@@ -56,6 +63,28 @@
 
          In particular, this is used by the Flutter engine in io.flutter.plugin.text.ProcessTextPlugin. -->
     <queries>
+        <package android:name="com.whatsapp" />
+        <package android:name="com.android.camera2" />
+        <package android:name="com.android.settings" />
+        <package android:name="com.android.calculator2" />
+        <package android:name="com.google.android.apps.maps" />
+        <package android:name="com.spotify.music" />
+        <package android:name="com.google.android.youtube" />
+        <package android:name="com.instagram.android" />
+        <package android:name="com.facebook.katana" />
+        <package android:name="com.twitter.android" />
+        <package android:name="com.snapchat.android" />
+        <package android:name="org.telegram.messenger" />
+        <package android:name="com.google.android.gm" />
+        <package android:name="com.android.chrome" />
+        <package android:name="com.netflix.mediaclient" />
+        <package android:name="com.zhiliaoapp.musically" />
+        <package android:name="com.google.android.apps.photos" />
+        <package android:name="com.android.contacts" />
+        <package android:name="com.android.deskclock" />
+        <package android:name="com.android.documentsui" />
+        <package android:name="com.android.vending" />
+
         <intent>
             <action android:name="android.speech.RecognitionService" />
         </intent>

@@ -8,6 +8,7 @@ import '../data/ui_message.dart';
 import '../services/tts_service.dart';
 import '../services/stt_service.dart';
 import '../services/wake_word_service.dart';
+import '../services/background_service.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -35,9 +36,11 @@ class _ChatScreenState extends State<ChatScreen> {
     super.initState();
     _sttService.initialize(onStatus: _handleStatus);
     _initWakeWord();
+    FridayBackgroundService.start();
   }
 
   void _handleStatus(String status) {
+    print("STT Status: $status");
     if (status == 'done' || status == 'notListening') {
       if (mounted) setState(() => _isListening = false);
     } else if (status == 'listening') {
@@ -57,40 +60,63 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _onWakeWordDetected() async {
     if (_isLoading || _isListening) return;
 
+    print("Wake word DETECTED!");
     setState(() => _isWaiting = false);
 
     // Stop wake word completely
     await _wakeWordService.stop();
 
     // Wait for STT to fully release
-    await Future.delayed(const Duration(milliseconds: 500));
+    await Future.delayed(const Duration(milliseconds: 800));
 
     // Speak acknowledgment
     await _ttsService.speak("Yes boss?");
 
     // Wait for TTS to finish speaking
-    await Future.delayed(const Duration(milliseconds: 1200));
+    await Future.delayed(const Duration(milliseconds: 1500));
 
     // Now start listening for command
-    await _toggleListening();
+    setState(() => _isListening = true);
+    bool commandHandled = false;
+    await _sttService.startListening(
+      onResult: (text) async {
+        if (commandHandled) return;
+        print("Command received: $text");
+        if (text.isNotEmpty) {
+          commandHandled = true;
+          if (mounted) {
+            setState(() {
+              _isListening = false;
+              _controller.text = text;
+            });
+            await _sendMessage();
+            // Force stop STT after message is sent to ensure no looping
+            await _sttService.stopListening();
+          }
+        }
+      },
+    );
 
     // IMPORTANT: Wait for user to finish speaking
-    // We poll _isListening which is updated by _handleStatus
-    while (_isListening) {
+    // Keep checking if still listening
+    while (_sttService.isListening) {
       await Future.delayed(const Duration(milliseconds: 500));
     }
+
+    // A small buffer before restarting wake word
+    await Future.delayed(const Duration(milliseconds: 500));
 
     // Restart wake word after done
     await _wakeWordService.start();
 
-    setState(() => _isWaiting = true);
+    if (mounted) setState(() => _isWaiting = true);
   }
+
   @override
   void dispose() {
     _wakeWordService.dispose();
     super.dispose();
   }
-
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -164,7 +190,11 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0D0D1A),
-      appBar: ChatAppBar(isSpeaking: _isSpeaking, onClear: _clearConversation,isWaiting: _isWaiting,),
+      appBar: ChatAppBar(
+        isSpeaking: _isSpeaking,
+        onClear: _clearConversation,
+        isWaiting: _isWaiting,
+      ),
       body: Column(
         children: [
           Expanded(
@@ -173,7 +203,7 @@ class _ChatScreenState extends State<ChatScreen> {
               scrollController: _scrollController,
             ),
           ),
-          ChatStatusBar(isListening: _isListening, isLoading: _isLoading),
+          ChatStatusBar(isListening: _isListening && !_isWaiting, isLoading: _isLoading),
           ChatInputBar(
             controller: _controller,
             isListening: _isListening,
